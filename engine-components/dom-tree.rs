@@ -1,11 +1,10 @@
+//create a dom tree programmatically?
+
 struct Node {
     children: Vec<Ndoe>,
     node_type: NodeType
 }
 
-/*
-Todo, Add more supported NodeTypes, such as comments
- */
 enum NodeType {
     Text(String),
     Comment(String),
