@@ -1,7 +1,8 @@
 //create a dom tree programmatically?
+//and then reverse this, go from a programmed dom tree to html
 
 struct Node {
-    children: Vec<Ndoe>,
+    children: Vec<Node>,
     node_type: NodeType
 }
 
