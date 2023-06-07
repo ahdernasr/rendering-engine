@@ -3,6 +3,7 @@ pub mod htmlparser;
 const HTML_DATA: &str = r#"
 <html>
     <body>
+        <!-- This is a comment -->
         <h1>Title</h1>
         <div id="main" class="test">
             <p>Hello <em>world</em>!</p>

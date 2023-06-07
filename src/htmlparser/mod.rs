@@ -62,7 +62,7 @@ impl Parser {
     //Consumes a tag name
     fn parse_tag_name(&mut self) -> String {
         self.consume_while(|c| match c {
-            'a'..='z' | 'A'..='Z' | '0'..='9' => true,
+            'a'..='z' | 'A'..='Z' | '0'..='9' | '!' | '-' => true,
             _ => false,
         })
     }
@@ -77,26 +77,7 @@ impl Parser {
 
     //Consumes an parses a piece of text (text element)
     fn parse_text(&mut self) -> domtree::Node {
-        if self.next_char() == '/' {
-            //possible comment detected, will parse comment
-            self.consume_char();
-            if self.next_char() == '/' {
-                self.parse_comment()
-            } else {
-                //text detected, returns incorrectly parsed "/" and add it to rest of the text and parses it
-                let mut text = "/".to_owned();
-                let text_rest = self.consume_while(|c| c != '<');
-                text.push_str(&text_rest);
-                domtree::text(text)
-            }
-        } else {
-            //parses text normally
-            domtree::text(self.consume_while(|c| c != '<'))
-        }
-    }
-
-    fn parse_comment(&mut self) -> domtree::Node {
-        domtree::comment(self.consume_while(|c| c != '<'))
+        domtree::text(self.consume_while(|c| c != '<'))
     }
 
     //Consumes and parses an element
@@ -104,6 +85,11 @@ impl Parser {
     fn parse_element(&mut self) -> domtree::Node {
         assert!(self.consume_char() == '<');
         let tag_name = self.parse_tag_name();
+        //Element is a comment, handle the comment tag
+        if tag_name == "!--" {
+            let comment_data = self.parse_comment();
+            return domtree::comment(comment_data);
+        }
         let attrs = self.parse_attributes();
         assert!(self.consume_char() == '>');
 
@@ -115,6 +101,47 @@ impl Parser {
         assert!(self.consume_char() == '>');
 
         return domtree::elem(tag_name, attrs, children);
+    }
+
+    /*
+
+    fn consume_while<F>(&mut self, test: F) -> String
+    where
+        F: Fn(char) -> bool,
+    {
+        let mut result = String::new();
+        while !self.eof() && test(self.next_char()) {
+            result.push(self.consume_char());
+        }
+        return result;
+    }
+
+    */
+    fn parse_comment(&mut self) -> String {
+        let mut result = String::new();
+
+        while !self.eof() {
+            if self.next_char() == '-' {
+                self.consume_char();
+                if self.next_char() == '-' {
+                    self.consume_char();
+                    if self.next_char() == '>' {
+                        self.consume_char();
+                        //end of comment reached, return result
+                        return result;
+                    } else {
+                        //false end of comment, add falsely consumed --
+                        result.push_str("--");
+                    }
+                } else {
+                    //false end of comment, add falsely consumed -
+                    result.push('-');
+                }
+            } else {
+                result.push(self.consume_char());
+            }
+        }
+        return result;
     }
 
     //Consumes an attribute
@@ -177,3 +204,32 @@ pub fn parse(source: String) -> domtree::Node {
         domtree::elem("html".to_string(), HashMap::new(), nodes)
     }
 }
+
+/*
+   //Consumes an parses a piece of text (text element)
+   fn parse_text(&mut self) -> domtree::Node {
+       if self.next_char() == '/' {
+           //possible comment detected, will parse comment
+           self.consume_char();
+           if self.next_char() == '/' {
+               self.consume_char(); //removes the second back_slash
+               self.parse_comment()
+           } else {
+               //text detected, returns incorrectly parsed "/" and add it to rest of the text and parses it
+               let mut text = "/".to_owned();
+               let text_rest = self.consume_while(|c| c != '<');
+               text.push_str(&text_rest);
+               domtree::text(text)
+           }
+       } else {
+           //parses text normally
+           domtree::text(self.consume_while(|c| c != '<'))
+       }
+   }
+
+   fn parse_comment(&mut self) -> domtree::Node {
+       domtree::comment(self.consume_while(|c| c != '<'))
+   }
+
+
+*/
