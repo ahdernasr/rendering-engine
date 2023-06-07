@@ -1,35 +1,47 @@
 //create a dom tree programmatically?
 //and then reverse this, go from a programmed dom tree to html
+#![allow(dead_code)]
+use std::collections::HashMap;
 
-struct Node {
+
+#[derive(Debug)]
+pub struct Node {
     children: Vec<Node>,
     node_type: NodeType
 }
 
-enum NodeType {
+#[derive(Debug)]
+pub enum NodeType {
     Text(String),
-    Comment(String),
     Element(ElementData),
-
+    Comment(String)
 }
 
-struct ElementData {
+#[derive(Debug)]
+pub struct ElementData {
     tag_name: String,
     attributes: AttrMap,
 }
 
-type AttrMap = HashMap<String, String>
+pub type AttrMap = HashMap<String, String>;
 
 //function that constructs a text node given its data
-fn text(data: String) -> Node {
+pub fn text(data: String) -> Node {
     Node { 
         children: Vec::new(), 
         node_type: NodeType::Text(data)
     }
 }
 
+pub fn comment(data: String) -> Node {
+    Node {
+        children: Vec::new(), 
+        node_type: NodeType::Comment(data)
+    }
+}
+
 //function that constructs an element node given its name, attributes, and children
-fn elem(name: String, attrs: AttrMap, children: Vec<Node>) {
+pub fn elem(name: String, attrs: AttrMap, children: Vec<Node>) -> Node {
     Node {
         children: children, 
         node_type: NodeType::Element(ElementData {
