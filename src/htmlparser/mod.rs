@@ -1,13 +1,15 @@
 /*
 Need to try and support:
 
-Comments
 Doctype declarations
 Escaped characters (like &amp;) and CDATA sections
-Self-closing tags: <br/> or <br> with no closing tag
 Error handling (e.g. unbalanced or improperly nested tags)
 Namespaces and other XHTML syntax: <html:body>
 Character encoding detection
+
+Supported:
+Comments
+Self-closing tags
 
  */
 use rustc_lexer::is_whitespace;
@@ -79,10 +81,11 @@ impl Parser {
     fn parse_text(&mut self) -> domtree::Node {
         domtree::text(self.consume_while(|c| c != '<'))
     }
-
+    
     //Consumes and parses an element
     //TODO, the assert function is bad error handling,
     fn parse_element(&mut self) -> domtree::Node {
+        let mut children: Vec<domtree::Node> = Vec::new();
         assert!(self.consume_char() == '<');
         let tag_name = self.parse_tag_name();
         //Element is a comment, handle the comment tag
@@ -91,9 +94,14 @@ impl Parser {
             return domtree::comment(comment_data);
         }
         let attrs = self.parse_attributes();
+        if self.next_char() == '/' {
+            self.consume_char();
+            self.consume_char();
+            return domtree::elem(tag_name, attrs, children);
+        }
         assert!(self.consume_char() == '>');
 
-        let children = self.parse_nodes();
+        children = self.parse_nodes();
 
         assert!(self.consume_char() == '<');
         assert!(self.consume_char() == '/');
@@ -166,7 +174,7 @@ impl Parser {
         let mut attributes = HashMap::new();
         loop {
             self.consume_whitespace();
-            if self.next_char() == '>' {
+            if self.next_char() == '>' || self.next_char() == '/' {
                 break;
             }
             let (name, value) = self.parse_attr();
